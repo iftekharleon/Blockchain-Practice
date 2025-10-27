@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TaskManager {
+    enum Status { Pending, InProgress, Completed }
+
+    struct Task {
+        uint id;
+        string title;
+        Status status;
+        address assignedTo;
+    }
+
+    Task[] public tasks;
+    uint public nextId;
+    event taskCreated(uint id, string title, address createdBy);
+
+    function createTask(string memory _title) public {
+      
+      tasks.push(Task(nextId, _title, Status.Pending, msg.sender));
+      emit taskCreated(nextId, _title, msg.sender);
+      nextId++;
+    }
+
+    function updateStatus(uint _id, Status _status) public {
+        require(_id < tasks.length, "Invalid task ID");
+        if (_status == Status.Completed) {
+          require(tasks[_id].status == Status.InProgress, "Status not in progress can't complete");
+        }
+        tasks[_id].status = _status;
+    }
+
+    function getTask(uint _id) public view returns (Task memory) {
+        return tasks[_id];
+    }
+
+    function deleteTask(uint _id) public {
+      require(_id < tasks.length, "Out of bounds");
+      tasks[_id] = tasks[tasks.length - 1];
+      tasks.pop();
+    }
+}
