@@ -35,8 +35,17 @@ contract TaskManager {
     }
 
     function deleteTask(uint _id) public {
-      require(_id < tasks.length, "Out of bounds");
-      tasks[_id] = tasks[tasks.length - 1];
-      tasks.pop();
+        require(_id < tasks.length, "Out of bounds");
+    
+        uint lastIndex = tasks.length - 1;
+    
+        if (_id != lastIndex) {
+            
+            tasks[_id] = tasks[lastIndex];
+            tasks[_id].id = _id;
+        }
+    
+        tasks.pop();
     }
+
 }
