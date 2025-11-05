@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Reentrancy Guard modifier
+contract ReentrancyGuard {
+    bool private _locked;
+
+    modifier nonReentrant() {
+        require(!_locked, "ReentrancyGuard: reentrant call");
+        _locked = true;
+        _;
+        _locked = false;
+    }
+}
+
+contract SafeBank is ReentrancyGuard {
+    mapping(address => uint256) public balances;
+    
+    event Deposit(address indexed user, uint256 amount);
+    event Withdrawal(address indexed user, uint256 amount);
+
+    function deposit() external payable {
+        require(msg.value > 0, "Deposit amount must be greater than 0");
+        balances[msg.sender] += msg.value;
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    // FIXED: Using Checks-Effects-Interactions pattern
+    function withdraw() external nonReentrant {
+        uint256 bal = balances[msg.sender];
+        require(bal > 0, "No balance to withdraw");
+        
+        // CHECKS: Already done above
+        
+        // EFFECTS: Update state before interaction
+        balances[msg.sender] = 0;
+        emit Withdrawal(msg.sender, bal);
+        
+        // INTERACTIONS: Safe to call external after state updates
+        (bool success, ) = msg.sender.call{value: bal}("");
+        require(success, "Transfer failed");
+    }
+
+    // Alternative fixed version using transfer()
+    function withdrawWithTransfer() external {
+        uint256 bal = balances[msg.sender];
+        require(bal > 0, "No balance to withdraw");
+        
+        // EFFECTS first
+        balances[msg.sender] = 0;
+        emit Withdrawal(msg.sender, bal);
+        
+        // Using transfer() which has gas limit (2300 gas)
+        payable(msg.sender).transfer(bal);
+    }
+
+    function getBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+}
