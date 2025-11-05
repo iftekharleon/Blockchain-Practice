@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./VulnerableBank.sol";
+import "./Attacker.sol";
+import "./SafeBank.sol";
+
+contract ReentrancyDemo {
+    // ✅ Declare state variables (missing in your snippet)
+    VulnerableBank public vulnerableBank;
+    SafeBank public safeBank;
+    Attacker public attacker;
+
+    // Events for Remix debugging
+    event LogMessage(string message, uint256 value);
+    event LogBalance(address target, uint256 balance);
+    event LogAttackStep(string step, uint256 value);
+
+    function setup() public {
+        vulnerableBank = new VulnerableBank();
+        safeBank = new SafeBank();
+        emit LogMessage(" Contracts deployed", 0);
+    }
+
+    function deployAttacker() public payable {
+        require(msg.value >= 1 ether, "Send at least 1 ETH");
+        attacker = new Attacker(address(vulnerableBank));
+        emit LogMessage(" Attacker deployed", msg.value);
+    }
+
+    function launchAttack() public {
+        attacker.attack{value: 1 ether}();
+        emit LogAttackStep("Attack initiated", 1 ether);
+    }
+
+    function checkResults() public {  // <-- Remove `view`
+    emit LogBalance(address(vulnerableBank), address(vulnerableBank).balance);
+    emit LogBalance(address(attacker), address(attacker).balance);
+    emit LogMessage(" Attack count:", attacker.attackCount());
+    }
+
+    function withdrawStolenFunds() public {
+        attacker.withdrawStolenFunds();
+        emit LogMessage(" Funds withdrawn", 0);
+    }
+}
