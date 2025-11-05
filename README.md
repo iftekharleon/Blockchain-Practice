@@ -1,0 +1,1 @@
+These are just some contracts I wrote while learning about Blockchain this is a huge feld with vast ammounts of knowledge. I'm learning and growing each day expanding the different parts of this amaizing technology.
